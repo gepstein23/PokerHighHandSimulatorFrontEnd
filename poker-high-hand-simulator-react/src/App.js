@@ -3,6 +3,7 @@ import './App.css';
 import axios from 'axios';
 import { PokerTable, renderCard}  from './PokerTable';
 import HighHandBoard from './HighHandBoard';
+import {wait} from "@testing-library/user-event/dist/utils";
 
 const App = () => {
 
@@ -18,15 +19,18 @@ const App = () => {
     const [handNum, setHandNum] = useState(-1);
     const [isSimulationDone, setIsSimulationDone] = useState(false);
     const [isPolling, setIsPolling] = useState(false);
-    const [isFastForward, setIsFastForward] = useState(true);
+    const [isFastForward, setIsFastForward] = useState(false);
     const fastForwardIntervalRef = useRef(null);
 
 
     const [ploMinimumQualifier, setPloMinimumQualifier] = useState("22233");
     const [nlhMinimumQualifier, setNlhMinimumQualifier] = useState("22233");
-    const [numPLOTables, setNumPLOTables] = useState(0);
-    const [numNLHTables, setNumNLHTables] = useState(0);
-    const [seatsPerTable, setSeatsPerTable] = useState(0);
+    const [numHandsPerHour, setNumHandsPerH] = useState(100);
+    const [numPLOTables, setNumPLOTables] = useState(4);
+    const [numNLHTables, setNumNLHTables] = useState(4);
+    const [seatsPerTable, setSeatsPerTable] = useState(4);
+    const [simulationDuration, setSimulationDuration] = useState(10);
+    const [noPloFlopRestriction, setPloflop] = useState(false);
 
     const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'
 
@@ -37,11 +41,11 @@ const App = () => {
                 numNlhTables: numNLHTables,
                 numPloTables: numPLOTables,
                 numPlayersPerTable: seatsPerTable,
-                numHandsPerHour: 100,
-                simulationDuration: 10,
+                numHandsPerHour: numHandsPerHour,
+                simulationDuration: simulationDuration,
                 nlhMinimumQualifyingHand: nlhMinimumQualifier,
                 ploMinimumQualifyingHand: ploMinimumQualifier,
-                noPloFlopRestriction: false
+                noPloFlopRestriction: noPloFlopRestriction
             });
             setSimulationId(response.data);
             setIsModalOpen(false);
@@ -82,26 +86,24 @@ const App = () => {
             console.error("Error fetching next hand:", error);
         }
     };
-
-    const handleFF = async () => {
-        setIsFastForward(true);
-
-
-        if (fastForwardIntervalRef.current) {
-            clearInterval(fastForwardIntervalRef.current);
-        }
-
-
-        fastForwardIntervalRef.current = setInterval(() => {
-            if (!isFastForward) {
-                clearInterval(fastForwardIntervalRef.current);
-                fastForwardIntervalRef.current = null;
-                return;
-            }
-            handleProceed();
-        }, 500);
-    };
-
+    //
+    //
+    //
+    // const handleFF = async () => {
+    //     setIsFastForward(true);
+    //
+    //    while (isFastForward) {
+    //        try {
+    //            const nextHandNum = handNum + 1;
+    //            setHandNum(nextHandNum);
+    //            const response = await axios.get(`${API_BASE_URL}/api/simulations/${simulationId}/hands/${nextHandNum}`);
+    //            setGameState(response.data);
+    //        } catch (error) {
+    //            console.error("Error fetching next hand:", error);
+    //        }
+    //    }
+    // };
+    //
 
     const handleStop = () => {
         setIsFastForward(false);
@@ -129,6 +131,9 @@ const App = () => {
     const handleSeatsChange = (e) => setSeatsPerTable(parseInt(e.target.value));
     const handlePLOQualChange = (e) => setPloMinimumQualifier(e.target.value);
     const handleNlhQualChange = (e) => setNlhMinimumQualifier(e.target.value);
+    const handNumHandsPerH = (e) => setNumHandsPerH(e.target.value);
+    const handSimulationDuartion = (e) => setSimulationDuration(e.target.value);
+    const handlePloFlop = (e) => setPloflop(e.target.value);
 
     return (
         <div>
@@ -139,41 +144,56 @@ const App = () => {
                     <div className="modal-content">
                         <h2>Set Simulation Parameters</h2>
                         <label>
-                            NLH High Hand Minimum Qualifier:
-                            <input value={nlhMinimumQualifier} type="text" maxLength="5" onChange={handleNlhQualChange} />
-                        </label>
-                        <label>
-                            PLO High Hand Minimum Qualifier:
-                            <input value={ploMinimumQualifier} type="text" maxLength="5" onChange={handlePLOQualChange} />
+                            Number of NLH Tables:
+                            <input type="number" value={numNLHTables} defaultValue={4}
+                                   onChange={handleNLHChange}/>
                         </label>
                         <label>
                             Number of PLO Tables:
-                            <input type="number" value={numPLOTables} onChange={handlePLOChange} />
+                            <input type="number" value={numPLOTables} defaultValue={4}
+                                   onChange={handlePLOChange}/>
                         </label>
                         <label>
-                            Number of NLH Tables:
-                            <input type="number" value={numNLHTables} onChange={handleNLHChange} />
+                            Players per Table:
+                            <input type="number" value={seatsPerTable} defaultValue={4}
+                                   onChange={handleSeatsChange}/>
                         </label>
                         <label>
-                            Seats Per Table:
-                            <input type="number" value={seatsPerTable} onChange={handleSeatsChange} />
+                            Simulation Duration (hours):
+                            <input type="number" value={simulationDuration} defaultValue={10}
+                                   onChange={handSimulationDuartion}/>
+                        </label>
+                        <label>
+                            NLH Minimum Qualifying Hand:
+                            <input type="text" value={nlhMinimumQualifier}
+                                   onChange={handleNlhQualChange}/>
+                        </label>
+                        <label>
+                            PLO Minimum Qualifying Hand:
+                            <input type="text" value={ploMinimumQualifier}
+                                   onChange={handlePLOQualChange}/>
+                        </label>
+                        <label>
+                            No PLO Flop Restriction:
+                            <input type="checkbox" checked={noPloFlopRestriction}
+                                   onChange={handlePloFlop}/>
                         </label>
                         <button onClick={handleStartSimulation}>Run Simulation</button>
                     </div>
                 </div>
-            )}
+                        )}
 
-            {/*            {isSimulationDone && (*/}
+            {/*{isSimulationDone && (*/}
             {/*    <div>*/}
-            {/*        <button onClick={handleFF} disabled={isFastForward}>Fast Forward</button>*/}
+            {/*        <button onClick={handleFF}>Fast Forward</button>*/}
             {/*    </div>*/}
             {/*)}*/}
-            {isSimulationDone && isFastForward && (
-                <div>
-                    <button onClick={handleStop}>Stop</button>
-                </div>
-            )}
-                        {isSimulationDone && (
+            {/*{isSimulationDone && isFastForward && (*/}
+            {/*    <div>*/}
+            {/*        <button onClick={handleStop}>Stop</button>*/}
+            {/*    </div>*/}
+            {/*)}*/}
+            {isSimulationDone && (
                 <div>
                     <button onClick={handleProceed} disabled={isFastForward}>Play Hand</button>
                 </div>
@@ -184,14 +204,30 @@ const App = () => {
                 </div>
             )}
 
-                        {!isModalOpen && (
+            {!isModalOpen && (
                 <div>
-                    { !gameState ? (
-                    <h2>Simulation In Progress</h2>
+                    {!isSimulationDone ? (
+                        <h2>Simulation In Progress</h2>
                     ) : <h2></h2>
                     }
 
-                                        {gameState ? (
+                    {!isSimulationDone && (
+                        <div>
+                            <div className="video-container">
+                                <iframe
+                                    width="1000"
+                                    height="600"
+                                    src="https://www.youtube.com/embed/9lHQN6rS1Z0?autoplay=1"
+                                    title="YouTube video player"
+                                    frameBorder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                ></iframe>
+                            </div>
+                        </div>
+                    )}
+
+                    {gameState ? (
                         <div>
                             <div>
                                 <div className="high-hand-board">
@@ -201,7 +237,7 @@ const App = () => {
                                             gameState.highHandSnapshot.highHand.map((card, index) => (
 
                                                 <div key={index} className="high-hand-card">
-                                                    { renderCard(card) }
+                                                    {renderCard(card)}
                                                 </div>
                                             ))
                                         ) : (
