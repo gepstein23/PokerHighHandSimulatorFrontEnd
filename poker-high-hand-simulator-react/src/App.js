@@ -46,10 +46,9 @@ const App = () => {
                 nlhMinimumQualifyingHand: nlhMinimumQualifier,
                 ploMinimumQualifyingHand: ploMinimumQualifier,
                 noPloFlopRestriction: noPloFlopRestriction
-            }, {
+                }, {
                         "Access-Control-Allow-Origin": "*",
-                },);
-            res.header("Access-Control-Allow-Origin", "*")
+                });
             setSimulationId(response.data);
             setIsModalOpen(false);
             setIsPolling(true);
