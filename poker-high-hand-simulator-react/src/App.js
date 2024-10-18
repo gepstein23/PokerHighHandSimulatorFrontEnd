@@ -178,29 +178,29 @@ const App = () => {
                             <input type="checkbox" checked={noPloFlopRestriction}
                                    onChange={handlePloFlop}/>
                         </label>
-                        <button onClick={handleStartSimulation}>Run Simulation</button>
+                        <button onPointerEnter ={handleStartSimulation}>Run Simulation</button>
                     </div>
                 </div>
                         )}
 
             {/*{isSimulationDone && (*/}
             {/*    <div>*/}
-            {/*        <button onClick={handleFF}>Fast Forward</button>*/}
+            {/*        <button onPointerEnter ={handleFF}>Fast Forward</button>*/}
             {/*    </div>*/}
             {/*)}*/}
             {/*{isSimulationDone && isFastForward && (*/}
             {/*    <div>*/}
-            {/*        <button onClick={handleStop}>Stop</button>*/}
+            {/*        <button onPointerEnter ={handleStop}>Stop</button>*/}
             {/*    </div>*/}
             {/*)}*/}
             {isSimulationDone && (
                 <div>
-                    <button onClick={handleProceed} disabled={isFastForward}>Play Hand</button>
+                    <button onPointerEnter ={handleProceed} disabled={isFastForward}>Play Hand</button>
                 </div>
             )}
             {isSimulationDone && (
                 <div>
-                    <button onClick={handleStartNewSimulation}>Start New Simulation</button>
+                    <button onPointerEnter ={handleStartNewSimulation}>Start New Simulation</button>
                 </div>
             )}
 
