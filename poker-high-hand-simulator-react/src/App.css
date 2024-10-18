@@ -1,7 +1,7 @@
 body {
   font-family: Arial, sans-serif;
-  background-color: #2e2e2e; /* Dark background for contrast */
-  color: white; /* Text color */
+  background-color: #2e2e2e;
+  color: white;
   text-align: center;
 }
 
@@ -10,30 +10,30 @@ header {
 }
 
 label {
-  margin: 0 15px; /* Space between inputs */
+  margin: 0 15px;
 }
 
 input {
-  padding: 5px; /* Padding for inputs */
-  font-size: 16px; /* Increase font size */
-  border: none; /* Remove border */
-  border-radius: 5px; /* Rounded corners */
+  padding: 5px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
 }
 
 #tables-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(600px, 1fr)); /* Responsive grid layout */
-  gap: 20px; /* Space between tables */
-  justify-content: center; /* Center the tables in the grid */
-  margin: 0 auto; /* Center the container */
+  grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
+  gap: 20px;
+  justify-content: center;
+  margin: 0 auto;
 }
 
 .table {
   position: relative;
-  width: 600px; /* Increased table size */
-  height: 600px; /* Increased table size */
-  border-radius: 50%; /* Make the table circular */
-  background-color: #006400; /* Green color for the poker table */
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background-color: #006400;
   margin: 20px;
   display: flex;
   align-items: center;
@@ -47,15 +47,15 @@ input {
   transform: translate(-50%, -50%);
   color: white;
   font-weight: bold;
-  font-size: 24px; /* Increased text size */
+  font-size: 24px;
 }
 
 .seat {
   position: absolute;
-  width: 100px; /* Increased chair size */
-  height: 100px; /* Increased chair size */
-  background-color: #8b4513; /* Brown color for chairs */
-  border-radius: 50%; /* Make the chairs circular */
+  width: 100px;
+  height: 100px;
+  background-color: #8b4513;
+  border-radius: 50%;
   color: white;
   display: flex;
   flex-direction: column;
@@ -67,63 +67,72 @@ input {
 .cards {
   display: flex;
   justify-content: center;
-  margin-bottom: 5px; /* Space between cards and seat text */
+  margin-bottom: 5px;
 }
 
 .card {
-  width: 40px; /* Increased width of poker cards */
-  height: 60px; /* Increased height of poker cards */
-  background-color: white; /* Color of poker cards */
-  border: 1px solid black; /* Border for poker cards */
-  border-radius: 2px; /* Slightly rounded corners */
-  margin: 0 2px; /* Space between cards */
-  color: black; /* Text color on cards */
+  width: 40px;
+  height: 60px;
+  background-color: white;
+  border: 1px solid black;
+  border-radius: 2px;
+  margin: 0 2px;
+  color: black;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px; /* Smaller text for card number */
+  font-size: 12px;
 }
 
 .top-container {
    display: flex;
-   justify-content: flex-start; /* Align items closer to the left */
-   align-items: center; /* Align items to the center of the row */
-   margin-bottom: 10px; /* Reduce space below */
-   gap: 20px; /* Space between elements */
+   justify-content: flex-start;
+   align-items: center;
+   margin-bottom: 10px;
+   gap: 20px;
  }
+.high-hand-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
 
 .high-hand-board {
-  width: 400px; /* Wider width for a rectangular shape */
-  height: 150px; /* Shorter height */
-  border: 2px solid #000;
+  flex: 1;
+  margin-right: 20px;
+  background-color: #38b32f;
+
+}
+
+.stats {
+  flex: 0 0 200px;
+
+  background-color: #38b32f;
   padding: 10px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between; /* Adjust content spacing */
-  text-align: center;
+  border-radius: 5px;
 }
 
 .high-hand-cards {
   display: flex;
   justify-content: center;
-  margin-bottom: 5px; /* Tighten spacing below cards */
+  margin-bottom: 5px;
 }
 
 .high-hand-card {
-  width: 50px; /* Adjust card width */
-  height: 70px; /* Adjust card height */
+  width: 50px;
+  height: 70px;
   background-color: #f1f1f1;
   border: 1px solid #ccc;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 5px; /* Space between cards */
+  margin: 0 5px;
 }
 
 .qualifiers-box {
   display: flex;
-  align-items: center; /* Align inputs horizontally */
-  gap: 10px; /* Space between inputs */
+  align-items: center;
+  gap: 10px;
 }
 
 input[type="text"], input[type="number"] {

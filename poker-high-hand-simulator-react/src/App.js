@@ -32,7 +32,7 @@ const App = () => {
     const [simulationDuration, setSimulationDuration] = useState(10);
     const [noPloFlopRestriction, setPloflop] = useState(false);
 
-    const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://ec2-35-85-34-37.us-west-2.compute.amazonaws.com:8080'
+    const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'
 
 
     const handleStartSimulation = async () => {
@@ -230,23 +230,25 @@ const App = () => {
                     {gameState ? (
                         <div>
                             <div>
-                                <div className="high-hand-board">
-                                    <h2>High Hand</h2>
-                                    <div className="high-hand-cards">
-                                        {gameState.highHandSnapshot && gameState.highHandSnapshot.highHand ? (
-                                            gameState.highHandSnapshot.highHand.map((card, index) => (
+                                <div className="high-hand-container">
+                                    <div className="high-hand-board">
+                                        <h2>High Hand</h2>
+                                        <div className="high-hand-cards">
+                                            {gameState.highHandSnapshot && gameState.highHandSnapshot.highHand ? (
+                                                gameState.highHandSnapshot.highHand.map((card, index) => (
+                                                    <div key={index} className="high-hand-card">
+                                                        {renderCard(card)}
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="no-high-hand">No High Hand Available</div>
+                                            )}
+                                        </div>
+                                        <div className="table-id">
+                                            Table ID: {gameState.highHandSnapshot?.tableID || "N/A"}
+                                        </div>
+                                    </div>
 
-                                                <div key={index} className="high-hand-card">
-                                                    {renderCard(card)}
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="no-high-hand">No High Hand Available</div>
-                                        )}
-                                    </div>
-                                    <div className="table-id">
-                                        Table ID: {gameState.highHandSnapshot?.tableID || "N/A"}
-                                    </div>
                                     <div className="stats">
                                         <div className="plo-win-percentage">
                                             PLO Win
