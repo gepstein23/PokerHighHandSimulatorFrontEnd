@@ -32,7 +32,7 @@ const App = () => {
     const [simulationDuration, setSimulationDuration] = useState(10);
     const [noPloFlopRestriction, setPloflop] = useState(false);
 
-    const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'
+    const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://ec2-35-85-34-37.us-west-2.compute.amazonaws.com:8080'
 
 
     const handleStartSimulation = async () => {
