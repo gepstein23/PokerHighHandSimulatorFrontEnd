@@ -37,7 +37,7 @@ const App = () => {
 
     const handleStartSimulation = async () => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/api/simulations/start`, {
+            const response = await axios.post(`${API_BASE_URL}/simulations/start`, {
                 numNlhTables: numNLHTables,
                 numPloTables: numPLOTables,
                 numPlayersPerTable: seatsPerTable,
@@ -61,7 +61,7 @@ const App = () => {
             if (!isPolling || !simulationId) return;
 
             try {
-                const response = await axios.get(`${API_BASE_URL}/api/simulations/${simulationId}/status`);
+                const response = await axios.get(`${API_BASE_URL}/simulations/${simulationId}/status`);
                 if (response.data === 'DONE') {
                     setIsPolling(false);
                     setIsSimulationDone(true);
@@ -80,7 +80,7 @@ const App = () => {
         try {
             const nextHandNum = handNum + 1;
             setHandNum(nextHandNum);
-            const response = await axios.get(`${API_BASE_URL}/api/simulations/${simulationId}/hands/${nextHandNum}`);
+            const response = await axios.get(`${API_BASE_URL}/simulations/${simulationId}/hands/${nextHandNum}`);
             setGameState(response.data);
         } catch (error) {
             console.error("Error fetching next hand:", error);
@@ -96,7 +96,7 @@ const App = () => {
     //        try {
     //            const nextHandNum = handNum + 1;
     //            setHandNum(nextHandNum);
-    //            const response = await axios.get(`${API_BASE_URL}/api/simulations/${simulationId}/hands/${nextHandNum}`);
+    //            const response = await axios.get(`${API_BASE_URL}/simulations/${simulationId}/hands/${nextHandNum}`);
     //            setGameState(response.data);
     //        } catch (error) {
     //            console.error("Error fetching next hand:", error);
