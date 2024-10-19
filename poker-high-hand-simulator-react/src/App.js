@@ -3,7 +3,6 @@ import './App.css';
 import axios from 'axios';
 import { PokerTable, renderCard}  from './PokerTable';
 import {Button, Form, Input, InputNumber, Switch, Spin} from "antd";
-import WordArt from "react-wordart";
 import FormItem from "antd/es/form/FormItem";
 
 export const DEFAULT_NUM_PLO = 8;
@@ -144,7 +143,7 @@ const App = () => {
 
     return (
         <div>
-            <WordArt text='Poker High Hand Simulator' theme={`italicOutline`} fontSize={80} className="word-art"/>
+            <h1 style={{fontSize:80, fontFamily: "Georgia"}}>Poker High Hand Simulator</h1>
             <img hidden={!isModalOpen} style={{width:"30%", height:'30%'}} src={require('./cards.png')} />
 
             <p hidden={!isModalOpen} className="p1">Poker rooms use High Hand promotions to attract Texas Hold 'Em (NLH) and Pot Limit Omaha (PLO) players. In these promotions, the player with the best ranked poker hand during a set period, usually an hour, wins a set monetary prize.
