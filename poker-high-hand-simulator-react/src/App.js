@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import axios from 'axios';
 import { PokerTable, renderCard } from './PokerTable';
-import { Button, Form, Input, InputNumber, Switch, Progress } from "antd";
+import { Button, Form, Input, InputNumber, Switch, Progress, ConfigProvider } from "antd";
 
 export const DEFAULT_NUM_PLO = 8;
 export const DEFAULT_NUM_NLH = 8;
@@ -11,6 +11,14 @@ export const DEFAULT_SIM_DUR = 100;
 export const DEFAULT_NUM_HANDS_PER_HOUR = 30;
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
+
+const antdTheme = {
+    token: {
+        colorPrimary: '#d4af37',
+        borderRadius: 8,
+        fontFamily: "'Poppins', sans-serif",
+    },
+};
 
 const App = () => {
     const [isModalOpen, setIsModalOpen] = useState(true);
@@ -89,7 +97,6 @@ const App = () => {
 
     const handleProceed = async () => {
         const nextHandNum = handNum + 1;
-        // Check if hand is available before making request
         if (!isSimulationDone && nextHandNum >= handsCompleted) {
             setError(`Hand ${nextHandNum + 1} is not yet simulated. ${handsCompleted} of ${totalHands} hands completed so far.`);
             return;
@@ -124,155 +131,195 @@ const App = () => {
     const canPlayHand = simulationId && (handsCompleted > 0 || isSimulationDone);
 
     return (
-        <div>
-            <h1 style={{fontSize: 80, fontFamily: "Georgia"}}>Poker High Hand Simulator</h1>
-            <img hidden={!isModalOpen} style={{width: "30%", height: '30%'}} src={require('./cards.png')} alt="cards" />
-
-            <p hidden={!isModalOpen} className="p1">Poker rooms use High Hand promotions to attract Texas Hold 'Em (NLH) and Pot Limit Omaha (PLO) players. In these promotions, the player with the best ranked poker hand during a set period, usually an hour, wins a set monetary prize.
-                To be eligible, players pay a rake taken from qualifying pots. The challenge arises because PLO and NLH have different odds of getting the strongest hands. Some poker rooms address this discrepancy by restricting PLO players from winning the HH unless their hand utilizes the first 3 community cards.
-                This project aims to find a fair solution for HH promotions and quantify the fairness of different HH promotion configurations.</p>
-            <p hidden={!isModalOpen} className="p1">This program allows the user to simulate HH promotions running at a poker room with NLH and PLO tables. The program plays through poker hands per table, stores qualifying HHs per period, and compares them to qualifying HHs from other tables during the same period. Once the simulation concludes, the program outputs the winning statistics per game type for the simulation duration.</p>
-            <p hidden={!isModalOpen} className="p1">Input the simulation parameters below to run a simulation asynchronously. Add an optional phone number to consent to receive a SMS once the simulation concludes.</p>
-
-            {isModalOpen && (
-                <Form
-                    labelCol={{ span: 5 }}
-                    wrapperCol={{ span: 30 }}
-                    style={{
-                        borderRadius: 25,
-                        backgroundColor: "#006400",
-                        margin: 50,
-                        border: 500,
-                        borderColor: "#111111",
-                        alignContent: "center",
-                        padding: 25
-                    }}
-                >
-                    <Form.Item label="Number NLH Tables">
-                        <InputNumber defaultValue={DEFAULT_NUM_NLH} min={0} onChange={(value) => setNumNLHTables(value ?? DEFAULT_NUM_NLH)} />
-                    </Form.Item>
-                    <Form.Item label="Number PLO Tables">
-                        <InputNumber defaultValue={DEFAULT_NUM_PLO} min={0} onChange={(value) => setNumPLOTables(value ?? DEFAULT_NUM_PLO)} />
-                    </Form.Item>
-                    <Form.Item label="Players per Table">
-                        <InputNumber defaultValue={DEFAULT_NUM_PLAYERS} min={2} max={10} onChange={(value) => setSeatsPerTable(value ?? DEFAULT_NUM_PLAYERS)} />
-                    </Form.Item>
-                    <Form.Item label="Simulation Duration (hours)">
-                        <InputNumber defaultValue={DEFAULT_SIM_DUR} min={1} onChange={(value) => setSimulationDuration(value ?? DEFAULT_SIM_DUR)} />
-                    </Form.Item>
-                    <Form.Item label="Hands per Hour">
-                        <InputNumber defaultValue={DEFAULT_NUM_HANDS_PER_HOUR} min={1} onChange={(value) => setNumHandsPerHour(value ?? DEFAULT_NUM_HANDS_PER_HOUR)} />
-                    </Form.Item>
-                    <Form.Item label="NLH Minimum Qualifying Hand:">
-                        <Input defaultValue="22233" onChange={(e) => setNlhMinimumQualifier(e.target.value)} style={{ width: '80%' }} />
-                    </Form.Item>
-                    <Form.Item label="PLO Minimum Qualifying Hand:">
-                        <Input defaultValue="22233" onChange={(e) => setPloMinimumQualifier(e.target.value)} style={{ width: '80%' }} />
-                    </Form.Item>
-                    <Form.Item label="PLO Must Flop High Hand?" valuePropName="checked">
-                        <Switch defaultChecked={true} onChange={(checked) => setNoPloFlopRestriction(!checked)} />
-                    </Form.Item>
-                    <Form.Item label="Optional Phone Number for SMS:">
-                        <Input onChange={(e) => setNotifPhoneNumber(e.target.value)} style={{ width: '30%', backgroundColor: 'white', borderRadius: 6 }} addonBefore="+1 " />
-                    </Form.Item>
-                    <Form.Item style={{ width: '100%' }}>
-                        <Button onClick={handleStartSimulation} loading={loading}>Run Simulation</Button>
-                    </Form.Item>
-                    {error && <p style={{ color: '#ff6b6b', textAlign: 'center' }}>{error}</p>}
-                </Form>
-            )}
-
-            {!isModalOpen && (
-                <div>
-                    {!isSimulationDone && (
-                        <div style={{padding: '30px 50px'}}>
-                            <h2 className="p2">Simulation In Progress</h2>
-                            <Progress
-                                percent={progressPercent}
-                                status="active"
-                                strokeColor="#38b32f"
-                                style={{ maxWidth: 600, margin: '0 auto' }}
-                            />
-                            <p style={{ marginTop: 10, color: '#ccc' }}>
-                                {handsCompleted.toLocaleString()} / {totalHands.toLocaleString()} hands completed
-                            </p>
-                        </div>
-                    )}
-
-                    {isSimulationDone && (
-                        <div style={{padding: '10px 50px'}}>
-                            <h2 className="p2" style={{color: '#38b32f'}}>Simulation Complete</h2>
-                        </div>
-                    )}
-
-                    <div style={{paddingTop: 20, display: 'flex', justifyContent: 'center', gap: 10}}>
-                        {canPlayHand && (
-                            <Button onClick={handleProceed} loading={loading} size="large">
-                                Play Hand {handNum + 2 <= totalHands ? `(#${handNum + 2})` : ''}
-                            </Button>
-                        )}
-                        <Button onClick={handleStartNewSimulation} size="large">Start New Simulation</Button>
+        <ConfigProvider theme={antdTheme}>
+            <div className="app-container">
+                {/* Header */}
+                <div className="header">
+                    <div className="header-suits">
+                        <span className="suit-dark">&#9824;</span>{' '}
+                        <span className="suit-red">&#9829;</span>{' '}
+                        <span className="suit-red">&#9830;</span>{' '}
+                        <span className="suit-dark">&#9827;</span>
                     </div>
+                    <h1 className="header-title">Poker High Hand Simulator</h1>
+                    <div className="header-divider" />
+                </div>
 
-                    {error && <p style={{ color: '#ff6b6b', marginTop: 10 }}>{error}</p>}
+                {/* Landing / Config */}
+                {isModalOpen && (
+                    <>
+                        <img className="hero-image" src={require('./cards.png')} alt="cards" />
 
-                    {handNum >= 0 && (
-                        <p style={{ marginTop: 5, color: '#999' }}>
-                            Viewing hand {handNum + 1} of {totalHands.toLocaleString()}
-                        </p>
-                    )}
-
-                    {gameState && (
-                        <div>
-                            <div className="high-hand-container">
-                                <div className="high-hand-board">
-                                    <h2>High Hand</h2>
-                                    <div className="high-hand-cards">
-                                        {gameState.highHandSnapshot && gameState.highHandSnapshot.highHand ? (
-                                            gameState.highHandSnapshot.highHand.map((card, index) => (
-                                                <div key={index} className="high-hand-card">
-                                                    {renderCard(card)}
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="no-high-hand">No High Hand Yet</div>
-                                        )}
-                                    </div>
-                                    <div className="table-id">
-                                        Table ID: {gameState.highHandSnapshot?.tableID || "N/A"}
-                                    </div>
-                                </div>
-
-                                <div className="stats">
-                                    <div className="plo-win-percentage">
-                                        PLO Win %: {calculateWinPercentage(gameState.statsSnapshot.numPloWins, gameState.statsSnapshot.numHighHands)}%
-                                    </div>
-                                    <div className="nlh-win-percentage">
-                                        NLH Win %: {calculateWinPercentage(gameState.statsSnapshot.numHoldEmWins, gameState.statsSnapshot.numHighHands)}%
-                                    </div>
-                                    <div className="high-hands-count">
-                                        Total High Hands: {gameState.statsSnapshot.numHighHands || 0}
-                                    </div>
-                                </div>
+                        <div className="intro-section">
+                            <div className="intro-card">
+                                Poker rooms use <strong>High Hand promotions</strong> to attract Texas Hold 'Em (NLH) and Pot Limit Omaha (PLO) players.
+                                The player with the best poker hand during a set period wins a cash prize.
+                                The challenge: PLO and NLH have very different odds of making strong hands,
+                                so finding a <strong>fair promotion structure</strong> is non-trivial.
                             </div>
-
-                            <div className="tables-container">
-                                {Object.keys(gameState.tableIdToSnapshot).map((tableId) => {
-                                    const tableData = gameState.tableIdToSnapshot[tableId];
-                                    return (
-                                        <PokerTable
-                                            key={tableId}
-                                            tableData={tableData}
-                                            tableNumber={tableId}
-                                        />
-                                    );
-                                })}
+                            <div className="intro-card">
+                                This simulator runs thousands of hands across NLH and PLO tables, tracking which game type
+                                wins the high hand each hour. Configure the parameters below and see the results in real time.
                             </div>
                         </div>
-                    )}
-                </div>
-            )}
-        </div>
+
+                        <div className="config-card">
+                            <div className="config-title">SIMULATION SETTINGS</div>
+                            <div className="config-title-divider" />
+                            <Form
+                                labelCol={{ span: 10 }}
+                                wrapperCol={{ span: 14 }}
+                                labelAlign="left"
+                            >
+                                <Form.Item label="NLH Tables">
+                                    <InputNumber defaultValue={DEFAULT_NUM_NLH} min={0} onChange={(v) => setNumNLHTables(v ?? DEFAULT_NUM_NLH)} style={{ width: '100%' }} />
+                                </Form.Item>
+                                <Form.Item label="PLO Tables">
+                                    <InputNumber defaultValue={DEFAULT_NUM_PLO} min={0} onChange={(v) => setNumPLOTables(v ?? DEFAULT_NUM_PLO)} style={{ width: '100%' }} />
+                                </Form.Item>
+                                <Form.Item label="Players per Table">
+                                    <InputNumber defaultValue={DEFAULT_NUM_PLAYERS} min={2} max={10} onChange={(v) => setSeatsPerTable(v ?? DEFAULT_NUM_PLAYERS)} style={{ width: '100%' }} />
+                                </Form.Item>
+                                <Form.Item label="Hands per Hour">
+                                    <InputNumber defaultValue={DEFAULT_NUM_HANDS_PER_HOUR} min={1} onChange={(v) => setNumHandsPerHour(v ?? DEFAULT_NUM_HANDS_PER_HOUR)} style={{ width: '100%' }} />
+                                </Form.Item>
+                                <Form.Item label="Duration (hours)">
+                                    <InputNumber defaultValue={DEFAULT_SIM_DUR} min={1} onChange={(v) => setSimulationDuration(v ?? DEFAULT_SIM_DUR)} style={{ width: '100%' }} />
+                                </Form.Item>
+                                <Form.Item label="NLH Min Qualifier">
+                                    <Input defaultValue="22233" onChange={(e) => setNlhMinimumQualifier(e.target.value)} placeholder="e.g. AAAKK" />
+                                </Form.Item>
+                                <Form.Item label="PLO Min Qualifier">
+                                    <Input defaultValue="22233" onChange={(e) => setPloMinimumQualifier(e.target.value)} placeholder="e.g. AAAKK" />
+                                </Form.Item>
+                                <Form.Item label="PLO Must Flop HH?" valuePropName="checked">
+                                    <Switch defaultChecked={true} onChange={(checked) => setNoPloFlopRestriction(!checked)} />
+                                </Form.Item>
+                                <Form.Item label="SMS Notification">
+                                    <Input onChange={(e) => setNotifPhoneNumber(e.target.value)} placeholder="Optional" addonBefore="+1" />
+                                </Form.Item>
+                                <Form.Item wrapperCol={{ offset: 0, span: 24 }} style={{ textAlign: 'center', marginTop: 24 }}>
+                                    <Button className="btn-gold" onClick={handleStartSimulation} loading={loading}>
+                                        RUN SIMULATION
+                                    </Button>
+                                </Form.Item>
+                                {error && <div className="error-message">{error}</div>}
+                            </Form>
+                        </div>
+                    </>
+                )}
+
+                {/* Simulation View */}
+                {!isModalOpen && (
+                    <div className="simulation-section">
+                        {/* Progress */}
+                        {!isSimulationDone && (
+                            <div className="progress-section">
+                                <div className="progress-title">SIMULATION IN PROGRESS</div>
+                                <div className="progress-bar-wrapper">
+                                    <Progress
+                                        percent={progressPercent}
+                                        status="active"
+                                        strokeColor={{ from: '#1a6b3c', to: '#d4af37' }}
+                                        trailColor="#1a1f2e"
+                                        size={[null, 14]}
+                                    />
+                                </div>
+                                <div className="progress-hands">
+                                    {handsCompleted.toLocaleString()} / {totalHands.toLocaleString()} hands
+                                </div>
+                            </div>
+                        )}
+
+                        {isSimulationDone && (
+                            <div style={{ padding: '20px 0' }}>
+                                <div className="complete-badge">&#9733; SIMULATION COMPLETE</div>
+                            </div>
+                        )}
+
+                        {/* Controls */}
+                        <div className="controls-section">
+                            {canPlayHand && (
+                                <Button className="btn-primary" onClick={handleProceed} loading={loading}>
+                                    Play Hand {handNum + 2 <= totalHands ? `#${handNum + 2}` : ''}
+                                </Button>
+                            )}
+                            <Button className="btn-secondary" onClick={handleStartNewSimulation}>
+                                New Simulation
+                            </Button>
+                        </div>
+
+                        {error && <div className="error-message">{error}</div>}
+
+                        {handNum >= 0 && (
+                            <div className="hand-info">
+                                Viewing hand {(handNum + 1).toLocaleString()} of {totalHands.toLocaleString()}
+                            </div>
+                        )}
+
+                        {/* Dashboard: High Hand + Stats */}
+                        {gameState && (
+                            <>
+                                <div className="dashboard">
+                                    <div className="high-hand-panel">
+                                        <div className="panel-title">&#9813; HIGH HAND</div>
+                                        <div className="high-hand-cards">
+                                            {gameState.highHandSnapshot && gameState.highHandSnapshot.highHand ? (
+                                                gameState.highHandSnapshot.highHand.map((card, index) => (
+                                                    <span key={index}>{renderCard(card)}</span>
+                                                ))
+                                            ) : (
+                                                <div className="no-high-hand">No qualifying hand this hour</div>
+                                            )}
+                                        </div>
+                                        <div className="high-hand-table-id">
+                                            Table: {gameState.highHandSnapshot?.tableID ? gameState.highHandSnapshot.tableID.substring(0, 8) + '...' : 'N/A'}
+                                        </div>
+                                    </div>
+
+                                    <div className="stats-panel">
+                                        <div className="panel-title">STATISTICS</div>
+                                        <div className="stat-item">
+                                            <div className="stat-label">PLO Wins</div>
+                                            <div className="stat-value plo">
+                                                {calculateWinPercentage(gameState.statsSnapshot.numPloWins, gameState.statsSnapshot.numHighHands)}
+                                                <span className="stat-suffix">%</span>
+                                            </div>
+                                        </div>
+                                        <div className="stat-item">
+                                            <div className="stat-label">NLH Wins</div>
+                                            <div className="stat-value nlh">
+                                                {calculateWinPercentage(gameState.statsSnapshot.numHoldEmWins, gameState.statsSnapshot.numHighHands)}
+                                                <span className="stat-suffix">%</span>
+                                            </div>
+                                        </div>
+                                        <div className="stat-item">
+                                            <div className="stat-label">Total High Hands</div>
+                                            <div className="stat-value total">{gameState.statsSnapshot.numHighHands || 0}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Tables */}
+                                <div className="tables-section-title">POKER ROOM</div>
+                                <div className="tables-container">
+                                    {Object.keys(gameState.tableIdToSnapshot).map((tableId) => {
+                                        const tableData = gameState.tableIdToSnapshot[tableId];
+                                        return (
+                                            <PokerTable
+                                                key={tableId}
+                                                tableData={tableData}
+                                                tableNumber={tableId}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+            </div>
+        </ConfigProvider>
     );
 };
 

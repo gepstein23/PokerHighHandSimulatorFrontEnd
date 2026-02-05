@@ -1,67 +1,206 @@
-.table-container {
-    position: relative;
-    width: 600px; /* Table size */
-    height: 600px; /* Table size */
+/* ============================================
+   POKER TABLE CARD
+   ============================================ */
+.poker-table-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
-.table-outline {
-    border: 5px solid black; /* Black square outline */
-    border-radius: 0; /* Square corners */
+.poker-table-card:hover {
+  border-color: var(--gold-border);
+  box-shadow: var(--shadow-gold);
 }
 
-.table {
-    background-color: green; /* Color of the round table */
-    border-radius: 50%; /* Round corners for the table */
-    width: 100%;
-    height: 100%;
-    position: relative;
-    padding-bottom: 100px; /* Space for table ID */
+/* Table Header (NLH/PLO + Qualifying badge) */
+.poker-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 0 4px;
 }
 
-.winning-hand {
-    background-color: red;
-    padding: 10px;
-    border-radius: 5px;
-    position: absolute;
-    top: -40px; /* Position above the table */
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10; /* Ensure it appears above other elements */
+.table-type-badge {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 4px 14px;
+  border-radius: 12px;
 }
 
-.community-cards {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 2px solid yellow; /* Yellow outline around community cards */
-    border-radius: 5px;
-    padding: 5px;
-    z-index: 5; /* Ensure it appears above table */
+.table-type-badge.nlh {
+  background: rgba(77, 166, 255, 0.12);
+  color: #4da6ff;
+  border: 1px solid rgba(77, 166, 255, 0.3);
 }
 
-.table-id {
-    position: absolute;
-    bottom: 10px; /* Adjust for spacing */
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 5; /* Ensure it appears above other elements */
+.table-type-badge.plo {
+  background: rgba(196, 30, 58, 0.12);
+  color: var(--red-bright);
+  border: 1px solid rgba(196, 30, 58, 0.3);
 }
 
+.qualifying-badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  background: rgba(212, 175, 55, 0.12);
+  color: var(--gold);
+  border: 1px solid var(--gold-border);
+}
+
+/* Table Wrapper */
+.poker-table-wrapper {
+  position: relative;
+  margin: 0 auto;
+}
+
+/* The Felt */
+.poker-table-felt {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--felt-gradient);
+  border: 8px solid var(--wood);
+  box-shadow:
+    inset 0 0 30px rgba(0, 0, 0, 0.3),
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    0 0 0 2px var(--wood-light);
+  position: relative;
+}
+
+/* Winning Hand */
+.winning-hand-display {
+  position: absolute;
+  top: -45px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: linear-gradient(135deg, var(--red) 0%, #8b0020 100%);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 6px 12px;
+  text-align: center;
+  box-shadow: 0 4px 12px var(--red-glow);
+}
+
+.no-winning-hand {
+  position: absolute;
+  top: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 16px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.winning-label {
+  display: block;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+
+/* Cards Row */
+.cards-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.winning-hand-display .card img {
+  width: 42px;
+  height: auto;
+  border-radius: 3px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  margin: 0 1px;
+}
+
+/* Seats */
+.seat {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 5;
+}
+
+.seat .cards-row {
+  background: rgba(92, 51, 23, 0.85);
+  border-radius: 8px;
+  padding: 3px 4px;
+  border: 1px solid rgba(139, 94, 60, 0.5);
+}
+
+.seat .card img {
+  width: 34px;
+  height: auto;
+  border-radius: 2px;
+  margin: 0 1px;
+}
+
+.seat-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gold-dim);
+  margin-top: 2px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+/* Community Cards */
+.community-cards-display {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+  background: rgba(0, 0, 0, 0.25);
+  border: 2px solid var(--gold-border);
+  border-radius: 10px;
+  padding: 6px 10px;
+}
+
+.community-cards-display .card img {
+  width: 44px;
+  height: auto;
+  border-radius: 3px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  margin: 0 2px;
+}
+
+/* Table ID */
+.table-id-display {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.35);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+/* Generic card styling */
 .card {
-    display: inline-block;
-    margin: 10px;
-    text-align: center;
+  display: inline-block;
 }
 
 .card img {
-    width: 100px; /* Adjust as needed */
-    height: auto;
-}
-
-.card-text {
-    margin-top: 5px;
+  display: block;
 }
