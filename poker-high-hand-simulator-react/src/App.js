@@ -10,7 +10,7 @@ export const DEFAULT_NUM_PLAYERS = 8;
 export const DEFAULT_SIM_DUR = 100;
 export const DEFAULT_NUM_HANDS_PER_HOUR = 30;
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://s3kbllcc5g.execute-api.us-east-1.amazonaws.com';
 
 const antdTheme = {
     token: {
