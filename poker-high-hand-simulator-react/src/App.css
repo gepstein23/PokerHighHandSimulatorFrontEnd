@@ -35,11 +35,12 @@ input {
   border-radius: 5px;
 }
 
-#tables-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Adjust minmax as needed */
-  grid-gap: 20px; /* Space between grid items */
-  padding: 10px;
+.tables-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
 }
 
 .table {
