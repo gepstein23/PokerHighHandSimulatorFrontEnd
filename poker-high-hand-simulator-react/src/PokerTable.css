@@ -6,14 +6,14 @@
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 14px;
+  padding-top: 50px;
   transition: transform 0.5s ease, box-shadow 0.5s ease, border-color 0.3s;
   overflow: visible;
   position: relative;
 }
 
-.poker-table-card:hover {
-  transform: scale(2.8);
-  z-index: 1000;
+/* JS handles transform via inline style; this just adds the backdrop */
+.poker-table-card.zoomed {
   border-color: var(--gold);
   box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.65), 0 0 40px rgba(212, 175, 55, 0.3);
 }
@@ -26,6 +26,11 @@
     0 0 30px rgba(212, 175, 55, 0.15),
     inset 0 0 8px rgba(212, 175, 55, 0.05);
   animation: qualifyGlow 2s ease-in-out infinite alternate;
+}
+
+/* Stop the glow animation when zoomed to avoid fighting with backdrop shadow */
+.poker-table-card.qualifying.zoomed {
+  animation: none;
 }
 
 @keyframes qualifyGlow {
@@ -104,10 +109,10 @@
   position: relative;
 }
 
-/* Winning Hand */
+/* Winning Hand - positioned above the table with clearance */
 .winning-hand-display {
   position: absolute;
-  top: -36px;
+  top: -44px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -117,11 +122,12 @@
   padding: 4px 8px;
   text-align: center;
   box-shadow: 0 4px 12px var(--red-glow);
+  white-space: nowrap;
 }
 
 .no-winning-hand {
   position: absolute;
-  top: -28px;
+  top: -34px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -173,6 +179,18 @@
   border-radius: 6px;
   padding: 2px 3px;
   border: 1px solid rgba(139, 94, 60, 0.5);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+/* Winning seat highlight */
+.seat.winning-seat .cards-row {
+  border-color: var(--gold);
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.5), 0 0 16px rgba(212, 175, 55, 0.25);
+}
+
+.seat.winning-seat .seat-label {
+  color: var(--gold);
+  font-weight: 700;
 }
 
 .seat .card img {
@@ -231,4 +249,3 @@
 .card img {
   display: block;
 }
-

@@ -1,3 +1,4 @@
+import React, { useRef, useState, useCallback } from 'react';
 import './PokerTable.css';
 
 export const renderCard = (card) => {
@@ -23,6 +24,47 @@ export const PokerTable = ({ tableData, tableNumber, isHighHandTable }) => {
     const tableHeight = 260;
     const chairSize = 65;
 
+    const cardRef = useRef(null);
+    const hoverTimerRef = useRef(null);
+    const [hoverStyle, setHoverStyle] = useState(null);
+
+    const triggerZoom = useCallback(() => {
+        const el = cardRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const elCenterX = rect.left + rect.width / 2;
+        const elCenterY = rect.top + rect.height / 2;
+        const vpCenterX = window.innerWidth / 2;
+        const vpCenterY = window.innerHeight / 2;
+        const scale = 2.8;
+        const tx = (vpCenterX - elCenterX) / scale;
+        const ty = (vpCenterY - elCenterY) / scale;
+        setHoverStyle({
+            transform: `scale(${scale}) translate(${tx}px, ${ty}px)`,
+            zIndex: 1000,
+        });
+    }, []);
+
+    const handleMouseEnter = useCallback(() => {
+        hoverTimerRef.current = setTimeout(triggerZoom, 1500);
+    }, [triggerZoom]);
+
+    const handleMouseMove = useCallback(() => {
+        // If cursor moves, reset the timer (must hold still)
+        if (hoverTimerRef.current && !hoverStyle) {
+            clearTimeout(hoverTimerRef.current);
+            hoverTimerRef.current = setTimeout(triggerZoom, 1500);
+        }
+    }, [triggerZoom, hoverStyle]);
+
+    const handleMouseLeave = useCallback(() => {
+        if (hoverTimerRef.current) {
+            clearTimeout(hoverTimerRef.current);
+            hoverTimerRef.current = null;
+        }
+        setHoverStyle(null);
+    }, []);
+
     const getChairPosition = (index) => {
         const angle = (index * angleStep - 90) * (Math.PI / 180);
         const a = tableWidth / 2.4;  // horizontal semi-axis
@@ -35,8 +77,31 @@ export const PokerTable = ({ tableData, tableNumber, isHighHandTable }) => {
     const isPlo = tableData.plo;
     const qualifies = tableData.qualifiesForHighHand;
 
+    // Find the winning seat by matching hole cards against winning hand
+    const winningSeatIndex = React.useMemo(() => {
+        if (!tableData.winningHand || !tableData.playerCards) return -1;
+        const winCardStrs = new Set(tableData.winningHand.map(c => c.strRepr));
+        let bestIdx = -1;
+        let bestMatches = 0;
+        tableData.playerCards.forEach((playerCards, index) => {
+            const matches = playerCards.filter(c => winCardStrs.has(c.strRepr)).length;
+            if (matches > bestMatches) {
+                bestMatches = matches;
+                bestIdx = index;
+            }
+        });
+        return bestIdx;
+    }, [tableData]);
+
     return (
-        <div className={`poker-table-card${qualifies ? ' qualifying' : ''}`}>
+        <div
+            ref={cardRef}
+            className={`poker-table-card${qualifies ? ' qualifying' : ''}${hoverStyle ? ' zoomed' : ''}`}
+            style={hoverStyle || undefined}
+            onMouseEnter={handleMouseEnter}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+        >
             <div className="poker-table-header">
                 <span className={`table-type-badge ${isPlo ? 'plo' : 'nlh'}`}>
                     {isPlo ? 'PLO' : 'NLH'}
@@ -63,7 +128,7 @@ export const PokerTable = ({ tableData, tableNumber, isHighHandTable }) => {
                     )}
 
                     {tableData.playerCards.map((playerCards, index) => (
-                        <div key={index} className="seat" style={getChairPosition(index)}>
+                        <div key={index} className={`seat${index === winningSeatIndex ? ' winning-seat' : ''}`} style={getChairPosition(index)}>
                             <div className="cards-row">
                                 {playerCards.map((card, cardIndex) => (
                                     <span key={cardIndex}>{renderCard(card)}</span>

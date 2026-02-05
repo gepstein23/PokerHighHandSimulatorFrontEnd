@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import './App.css';
 import axios from 'axios';
 import { PokerTable, renderCard } from './PokerTable';
-import { Button, Form, Input, InputNumber, Switch, Progress, ConfigProvider } from "antd";
+import { Button, Form, Input, InputNumber, Switch, Progress, ConfigProvider, Collapse } from "antd";
 
 export const DEFAULT_NUM_PLO = 8;
 export const DEFAULT_NUM_NLH = 8;
@@ -23,7 +23,7 @@ const antdTheme = {
 const SPEED_MAP = { 1: 2000, 5: 400, 25: 80, 100: 10, 999: 1 };
 
 const App = () => {
-    const [currentPage, setCurrentPage] = useState('config'); // 'config' | 'simulation' | 'research'
+    const [showResearch, setShowResearch] = useState(false);
     const [simulationId, setSimulationId] = useState(null);
     const [gameState, setGameState] = useState(null);
     const [handNum, setHandNum] = useState(-1);
@@ -46,7 +46,9 @@ const App = () => {
     const [seatsPerTable, setSeatsPerTable] = useState(DEFAULT_NUM_PLAYERS);
     const [simulationDuration, setSimulationDuration] = useState(DEFAULT_SIM_DUR);
     const [noPloFlopRestriction, setNoPloFlopRestriction] = useState(false);
-    const [notifPhoneNumber, setNotifPhoneNumber] = useState(null);
+
+    // Snapshot of params the current simulation was started with
+    const [simParams, setSimParams] = useState(null);
 
     // Refs for auto-play to avoid stale closures
     const handNumRef = useRef(handNum);
@@ -63,6 +65,8 @@ const App = () => {
     simulationIdRef.current = simulationId;
     totalHandsRef.current = totalHands;
 
+    const hasSimulation = !!simulationId;
+
     const calculateWinPercentage = (wins, totalHours) => {
         return totalHours > 0 ? ((wins / totalHours) * 100).toFixed(2) : 0;
     };
@@ -78,37 +82,48 @@ const App = () => {
         return map;
     }, [gameState]);
 
-    // Get the table type (PLO/NLH) for the high hand
-    const highHandTableInfo = useMemo(() => {
-        if (!gameState?.highHandSnapshot?.tableID || !gameState.tableIdToSnapshot) return null;
-        const tableId = gameState.highHandSnapshot.tableID;
-        const tableData = gameState.tableIdToSnapshot[tableId];
-        if (!tableData) return null;
-        return {
-            tableNumber: tableIdMap[tableId] || '?',
-            isPlo: tableData.plo,
-        };
+    // Find ALL qualifying tables with their seat numbers
+    const qualifyingTables = useMemo(() => {
+        if (!gameState?.tableIdToSnapshot || !gameState?.highHandSnapshot?.highHand) return [];
+        const hhCardStrs = new Set(gameState.highHandSnapshot.highHand.map(c => c.strRepr));
+        const results = [];
+        const sortedKeys = Object.keys(gameState.tableIdToSnapshot).sort();
+        sortedKeys.forEach((tableId) => {
+            const tableData = gameState.tableIdToSnapshot[tableId];
+            if (!tableData.qualifiesForHighHand) return;
+            // Find best-matching seat
+            let bestSeat = null;
+            let bestMatches = 0;
+            tableData.playerCards.forEach((playerCards, index) => {
+                const matches = playerCards.filter(c => hhCardStrs.has(c.strRepr)).length;
+                if (matches > bestMatches) {
+                    bestMatches = matches;
+                    bestSeat = index + 1;
+                }
+            });
+            results.push({
+                tableId,
+                tableNumber: tableIdMap[tableId] || '?',
+                isPlo: tableData.plo,
+                seatNumber: bestSeat,
+                isWinner: tableId === gameState.highHandSnapshot.tableID,
+            });
+        });
+        // Put the winning table first
+        results.sort((a, b) => (b.isWinner ? 1 : 0) - (a.isWinner ? 1 : 0));
+        return results;
     }, [gameState, tableIdMap]);
 
-    // Derive winning seat by matching player hole cards against high hand
-    const highHandSeatNumber = useMemo(() => {
-        if (!gameState?.highHandSnapshot?.highHand || !gameState?.highHandSnapshot?.tableID) return null;
-        const tableData = gameState.tableIdToSnapshot[gameState.highHandSnapshot.tableID];
-        if (!tableData) return null;
-        const hhCardStrs = new Set(gameState.highHandSnapshot.highHand.map(c => c.strRepr));
-        let bestSeat = null;
-        let bestMatches = 0;
-        tableData.playerCards.forEach((playerCards, index) => {
-            const matches = playerCards.filter(c => hhCardStrs.has(c.strRepr)).length;
-            if (matches > bestMatches) {
-                bestMatches = matches;
-                bestSeat = index + 1;
-            }
-        });
-        return bestSeat;
-    }, [gameState]);
-
     const handleStartSimulation = async () => {
+        // Reset previous simulation state
+        setIsAutoPlaying(false);
+        setPlaybackSpeed(1);
+        setGameState(null);
+        setHandNum(-1);
+        setIsSimulationDone(false);
+        setIsPolling(false);
+        setHandsCompleted(0);
+
         try {
             setError(null);
             setLoading(true);
@@ -121,11 +136,14 @@ const App = () => {
                 nlhMinimumQualifyingHand: nlhMinimumQualifier,
                 ploMinimumQualifyingHand: ploMinimumQualifier,
                 noPloFlopRestriction: noPloFlopRestriction,
-                notificationPhoneNumber: notifPhoneNumber,
             });
             setSimulationId(response.data);
             setTotalHands(simulationDuration * numHandsPerHour);
-            setCurrentPage('simulation');
+            setSimParams({
+                numNLHTables, numPLOTables, seatsPerTable, numHandsPerHour,
+                simulationDuration, nlhMinimumQualifier, ploMinimumQualifier,
+                noPloFlopRestriction,
+            });
             setIsPolling(true);
         } catch (err) {
             console.error("Error starting simulation:", err);
@@ -197,26 +215,46 @@ const App = () => {
         return () => clearInterval(interval);
     }, [isAutoPlaying, playbackSpeed, handleProceed]);
 
-    const handleStartNewSimulation = () => {
-        setCurrentPage('config');
-        setSimulationId(null);
-        setGameState(null);
-        setHandNum(-1);
-        setIsSimulationDone(false);
-        setIsPolling(false);
-        setHandsCompleted(0);
-        setTotalHands(0);
-        setError(null);
-        setIsAutoPlaying(false);
-        setPlaybackSpeed(1);
-    };
-
     const toggleAutoPlay = () => {
         setIsAutoPlaying(prev => !prev);
     };
 
     const progressPercent = totalHands > 0 ? Math.round((handsCompleted / totalHands) * 100) : 0;
     const canPlayHand = simulationId && (handsCompleted > 0 || isSimulationDone);
+
+    // Research page overlay
+    if (showResearch) {
+        return (
+            <ConfigProvider theme={antdTheme}>
+                <div className="app-container">
+                    <div className="header">
+                        <div className="header-suits">
+                            <span className="suit-dark">&#9824;</span>{' '}
+                            <span className="suit-red">&#9829;</span>{' '}
+                            <span className="suit-red">&#9830;</span>{' '}
+                            <span className="suit-dark">&#9827;</span>
+                        </div>
+                        <h1 className="header-title">Poker High Hand Simulator</h1>
+                        <div className="header-divider" />
+                    </div>
+                    <div className="research-page">
+                        <div className="research-wip">
+                            <div className="research-wip-icon">&#128300;</div>
+                            <h2 className="research-wip-title">Research Hub</h2>
+                            <p className="research-wip-desc">
+                                Deep-dive analytics on high hand promotion fairness, optimal qualifier thresholds,
+                                and PLO vs NLH win-rate distributions coming soon.
+                            </p>
+                            <div className="research-wip-badge">WORK IN PROGRESS</div>
+                            <button className="btn-research-back" onClick={() => setShowResearch(false)}>
+                                &#8592; Back
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </ConfigProvider>
+        );
+    }
 
     return (
         <ConfigProvider theme={antdTheme}>
@@ -233,11 +271,10 @@ const App = () => {
                     <div className="header-divider" />
                 </div>
 
-                {/* Landing / Config */}
-                {currentPage === 'config' && (
+                {/* Intro - only before first simulation */}
+                {!hasSimulation && (
                     <>
                         <img className="hero-image" src={require('./cards.png')} alt="cards" />
-
                         <div className="intro-section">
                             <div className="intro-card">
                                 Poker rooms use <strong>High Hand promotions</strong> to attract Texas Hold 'Em (NLH) and Pot Limit Omaha (PLO) players.
@@ -250,15 +287,16 @@ const App = () => {
                                 wins the high hand each hour. Configure the parameters below and see the results in real time.
                             </div>
                         </div>
+                    </>
+                )}
 
+                {/* Config Form - full form before sim, params bar + collapsible restart during sim */}
+                {!hasSimulation ? (
+                    <>
                         <div className="config-card">
                             <div className="config-title">SIMULATION SETTINGS</div>
                             <div className="config-title-divider" />
-                            <Form
-                                labelCol={{ span: 10 }}
-                                wrapperCol={{ span: 14 }}
-                                labelAlign="left"
-                            >
+                            <Form labelCol={{ span: 10 }} wrapperCol={{ span: 14 }} labelAlign="left">
                                 <Form.Item label="NLH Tables">
                                     <InputNumber defaultValue={DEFAULT_NUM_NLH} min={0} onChange={(v) => setNumNLHTables(v ?? DEFAULT_NUM_NLH)} style={{ width: '100%' }} />
                                 </Form.Item>
@@ -283,10 +321,7 @@ const App = () => {
                                 <Form.Item label="PLO Must Flop HH?" valuePropName="checked">
                                     <Switch defaultChecked={true} onChange={(checked) => setNoPloFlopRestriction(!checked)} />
                                 </Form.Item>
-                                <Form.Item label="SMS Notification">
-                                    <Input onChange={(e) => setNotifPhoneNumber(e.target.value)} placeholder="Optional" addonBefore="+1" />
-                                </Form.Item>
-                                <Form.Item wrapperCol={{ offset: 0, span: 24 }} style={{ textAlign: 'center', marginTop: 24 }}>
+                                <Form.Item wrapperCol={{ offset: 0, span: 24 }} style={{ textAlign: 'center', marginTop: 24, marginBottom: 0 }}>
                                     <Button className="btn-gold btn-gold-pulse" onClick={handleStartSimulation} loading={loading}>
                                         RUN SIMULATION
                                     </Button>
@@ -294,17 +329,39 @@ const App = () => {
                                 {error && <div className="error-message">{error}</div>}
                             </Form>
                         </div>
-
                         <div style={{ marginTop: 32 }}>
-                            <button className="btn-research" onClick={() => setCurrentPage('research')}>
+                            <button className="btn-research" onClick={() => setShowResearch(true)}>
                                 <span className="research-icon">&#128300;</span> View Research
                             </button>
                         </div>
                     </>
+                ) : (
+                    <div className="sim-params-bar">
+                        {simParams && (
+                            <div className="sim-params-pills">
+                                <span className="param-pill"><strong>{simParams.numNLHTables}</strong> NLH</span>
+                                <span className="param-pill"><strong>{simParams.numPLOTables}</strong> PLO</span>
+                                <span className="param-pill"><strong>{simParams.seatsPerTable}</strong> seats</span>
+                                <span className="param-pill"><strong>{simParams.numHandsPerHour}</strong> hands/hr</span>
+                                <span className="param-pill"><strong>{simParams.simulationDuration}</strong> hrs</span>
+                                <span className="param-pill">NLH min: <strong>{simParams.nlhMinimumQualifier}</strong></span>
+                                <span className="param-pill">PLO min: <strong>{simParams.ploMinimumQualifier}</strong></span>
+                                {!simParams.noPloFlopRestriction && <span className="param-pill">PLO must flop</span>}
+                            </div>
+                        )}
+                        <div className="sim-params-actions">
+                            <Button className="btn-restart" onClick={handleStartSimulation} loading={loading}>
+                                RESTART SIMULATION
+                            </Button>
+                            <button className="btn-research btn-research-small" onClick={() => setShowResearch(true)}>
+                                <span className="research-icon">&#128300;</span> Research
+                            </button>
+                        </div>
+                    </div>
                 )}
 
-                {/* Simulation View */}
-                {currentPage === 'simulation' && (
+                {/* Simulation View - below config when active */}
+                {hasSimulation && (
                     <div className="simulation-section">
                         {/* Progress */}
                         {!isSimulationDone && (
@@ -362,13 +419,6 @@ const App = () => {
                                 </>
                             )}
 
-                            <Button className="btn-secondary" onClick={handleStartNewSimulation}>
-                                New Simulation
-                            </Button>
-
-                            <button className="btn-research btn-research-small" onClick={() => setCurrentPage('research')}>
-                                <span className="research-icon">&#128300;</span> Research
-                            </button>
                         </div>
 
                         {error && <div className="error-message">{error}</div>}
@@ -394,19 +444,22 @@ const App = () => {
                                                 <div className="no-high-hand">No qualifying hand this hour</div>
                                             )}
                                         </div>
-                                        <div className="high-hand-table-id">
-                                            {highHandTableInfo ? (
-                                                <>
-                                                    <span className={`hh-table-badge ${highHandTableInfo.isPlo ? 'plo' : 'nlh'}`}>
-                                                        {highHandTableInfo.isPlo ? 'PLO' : 'NLH'}
-                                                    </span>
-                                                    {' '}Table {highHandTableInfo.tableNumber}
-                                                    {highHandSeatNumber && (
-                                                        <span className="hh-seat-badge">Seat {highHandSeatNumber}</span>
-                                                    )}
-                                                </>
+                                        <div className="high-hand-qualifiers">
+                                            {qualifyingTables.length > 0 ? (
+                                                qualifyingTables.map((qt) => (
+                                                    <div key={qt.tableId} className={`hh-qualifier-row ${qt.isWinner ? 'winner' : ''}`}>
+                                                        {qt.isWinner && <span className="hh-winner-star">&#9733;</span>}
+                                                        <span className={`hh-table-badge ${qt.isPlo ? 'plo' : 'nlh'}`}>
+                                                            {qt.isPlo ? 'PLO' : 'NLH'}
+                                                        </span>
+                                                        <span className="hh-qualifier-text">Table {qt.tableNumber}</span>
+                                                        {qt.seatNumber && (
+                                                            <span className="hh-seat-badge">Seat {qt.seatNumber}</span>
+                                                        )}
+                                                    </div>
+                                                ))
                                             ) : (
-                                                'N/A'
+                                                <div className="hh-qualifier-row">N/A</div>
                                             )}
                                         </div>
                                     </div>
@@ -451,27 +504,6 @@ const App = () => {
                                 </div>
                             </>
                         )}
-                    </div>
-                )}
-
-                {/* Research Page */}
-                {currentPage === 'research' && (
-                    <div className="research-page">
-                        <div className="research-wip">
-                            <div className="research-wip-icon">&#128300;</div>
-                            <h2 className="research-wip-title">Research Hub</h2>
-                            <p className="research-wip-desc">
-                                Deep-dive analytics on high hand promotion fairness, optimal qualifier thresholds,
-                                and PLO vs NLH win-rate distributions coming soon.
-                            </p>
-                            <div className="research-wip-badge">WORK IN PROGRESS</div>
-                            <button
-                                className="btn-research-back"
-                                onClick={() => setCurrentPage(simulationId ? 'simulation' : 'config')}
-                            >
-                                &#8592; Back
-                            </button>
-                        </div>
                     </div>
                 )}
             </div>
