@@ -19,9 +19,9 @@ export const renderCard = (card) => {
 export const PokerTable = ({ tableData, tableNumber, isHighHandTable }) => {
     const chairsPerTable = tableData.playerCards.length;
     const angleStep = 360 / chairsPerTable;
-    const tableWidth = 340;
-    const tableHeight = 220;
-    const chairSize = 60;
+    const tableWidth = 400;
+    const tableHeight = 260;
+    const chairSize = 65;
 
     const getChairPosition = (index) => {
         const angle = (index * angleStep - 90) * (Math.PI / 180);

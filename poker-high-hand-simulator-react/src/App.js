@@ -20,7 +20,7 @@ const antdTheme = {
     },
 };
 
-const SPEED_MAP = { 1: 2000, 2: 1000, 5: 400, 10: 200 };
+const SPEED_MAP = { 1: 2000, 5: 400, 25: 80, 100: 10, 999: 1 };
 
 const App = () => {
     const [currentPage, setCurrentPage] = useState('config'); // 'config' | 'simulation' | 'research'
@@ -89,6 +89,24 @@ const App = () => {
             isPlo: tableData.plo,
         };
     }, [gameState, tableIdMap]);
+
+    // Derive winning seat by matching player hole cards against high hand
+    const highHandSeatNumber = useMemo(() => {
+        if (!gameState?.highHandSnapshot?.highHand || !gameState?.highHandSnapshot?.tableID) return null;
+        const tableData = gameState.tableIdToSnapshot[gameState.highHandSnapshot.tableID];
+        if (!tableData) return null;
+        const hhCardStrs = new Set(gameState.highHandSnapshot.highHand.map(c => c.strRepr));
+        let bestSeat = null;
+        let bestMatches = 0;
+        tableData.playerCards.forEach((playerCards, index) => {
+            const matches = playerCards.filter(c => hhCardStrs.has(c.strRepr)).length;
+            if (matches > bestMatches) {
+                bestMatches = matches;
+                bestSeat = index + 1;
+            }
+        });
+        return bestSeat;
+    }, [gameState]);
 
     const handleStartSimulation = async () => {
         try {
@@ -331,13 +349,13 @@ const App = () => {
                                     </Button>
 
                                     <div className="speed-selector">
-                                        {[1, 2, 5, 10].map(speed => (
+                                        {[[1,'1x'], [5,'5x'], [25,'25x'], [100,'100x'], [999,'MAX']].map(([speed, label]) => (
                                             <button
                                                 key={speed}
                                                 className={`speed-btn ${playbackSpeed === speed ? 'active' : ''}`}
                                                 onClick={() => setPlaybackSpeed(speed)}
                                             >
-                                                {speed}x
+                                                {label}
                                             </button>
                                         ))}
                                     </div>
@@ -383,6 +401,9 @@ const App = () => {
                                                         {highHandTableInfo.isPlo ? 'PLO' : 'NLH'}
                                                     </span>
                                                     {' '}Table {highHandTableInfo.tableNumber}
+                                                    {highHandSeatNumber && (
+                                                        <span className="hh-seat-badge">Seat {highHandSeatNumber}</span>
+                                                    )}
                                                 </>
                                             ) : (
                                                 'N/A'
