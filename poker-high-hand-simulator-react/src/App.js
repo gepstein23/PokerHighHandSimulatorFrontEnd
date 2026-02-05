@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './App.css';
 import axios from 'axios';
 import { PokerTable, renderCard } from './PokerTable';
@@ -20,8 +20,10 @@ const antdTheme = {
     },
 };
 
+const SPEED_MAP = { 1: 2000, 2: 1000, 5: 400, 10: 200 };
+
 const App = () => {
-    const [isModalOpen, setIsModalOpen] = useState(true);
+    const [currentPage, setCurrentPage] = useState('config'); // 'config' | 'simulation' | 'research'
     const [simulationId, setSimulationId] = useState(null);
     const [gameState, setGameState] = useState(null);
     const [handNum, setHandNum] = useState(-1);
@@ -31,6 +33,10 @@ const App = () => {
     const [totalHands, setTotalHands] = useState(0);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
+
+    // Auto-play state
+    const [isAutoPlaying, setIsAutoPlaying] = useState(false);
+    const [playbackSpeed, setPlaybackSpeed] = useState(1);
 
     const [ploMinimumQualifier, setPloMinimumQualifier] = useState("22233");
     const [nlhMinimumQualifier, setNlhMinimumQualifier] = useState("22233");
@@ -42,9 +48,47 @@ const App = () => {
     const [noPloFlopRestriction, setNoPloFlopRestriction] = useState(false);
     const [notifPhoneNumber, setNotifPhoneNumber] = useState(null);
 
+    // Refs for auto-play to avoid stale closures
+    const handNumRef = useRef(handNum);
+    const handsCompletedRef = useRef(handsCompleted);
+    const isSimulationDoneRef = useRef(isSimulationDone);
+    const loadingRef = useRef(loading);
+    const simulationIdRef = useRef(simulationId);
+    const totalHandsRef = useRef(totalHands);
+
+    handNumRef.current = handNum;
+    handsCompletedRef.current = handsCompleted;
+    isSimulationDoneRef.current = isSimulationDone;
+    loadingRef.current = loading;
+    simulationIdRef.current = simulationId;
+    totalHandsRef.current = totalHands;
+
     const calculateWinPercentage = (wins, totalHours) => {
         return totalHours > 0 ? ((wins / totalHours) * 100).toFixed(2) : 0;
     };
+
+    // Compute integer table IDs from sorted UUID keys
+    const tableIdMap = useMemo(() => {
+        if (!gameState || !gameState.tableIdToSnapshot) return {};
+        const sortedKeys = Object.keys(gameState.tableIdToSnapshot).sort();
+        const map = {};
+        sortedKeys.forEach((uuid, index) => {
+            map[uuid] = index + 1;
+        });
+        return map;
+    }, [gameState]);
+
+    // Get the table type (PLO/NLH) for the high hand
+    const highHandTableInfo = useMemo(() => {
+        if (!gameState?.highHandSnapshot?.tableID || !gameState.tableIdToSnapshot) return null;
+        const tableId = gameState.highHandSnapshot.tableID;
+        const tableData = gameState.tableIdToSnapshot[tableId];
+        if (!tableData) return null;
+        return {
+            tableNumber: tableIdMap[tableId] || '?',
+            isPlo: tableData.plo,
+        };
+    }, [gameState, tableIdMap]);
 
     const handleStartSimulation = async () => {
         try {
@@ -63,7 +107,7 @@ const App = () => {
             });
             setSimulationId(response.data);
             setTotalHands(simulationDuration * numHandsPerHour);
-            setIsModalOpen(false);
+            setCurrentPage('simulation');
             setIsPolling(true);
         } catch (err) {
             console.error("Error starting simulation:", err);
@@ -95,28 +139,48 @@ const App = () => {
         return () => clearInterval(interval);
     }, [isPolling, simulationId]);
 
-    const handleProceed = async () => {
-        const nextHandNum = handNum + 1;
-        if (!isSimulationDone && nextHandNum >= handsCompleted) {
-            setError(`Hand ${nextHandNum + 1} is not yet simulated. ${handsCompleted} of ${totalHands} hands completed so far.`);
+    const handleProceed = useCallback(async () => {
+        if (loadingRef.current) return; // guard against stacked calls
+
+        const nextHandNum = handNumRef.current + 1;
+        if (!isSimulationDoneRef.current && nextHandNum >= handsCompletedRef.current) {
+            setError(`Hand ${nextHandNum + 1} is not yet simulated. ${handsCompletedRef.current} of ${totalHandsRef.current} hands completed so far.`);
+            setIsAutoPlaying(false);
+            return;
+        }
+        if (nextHandNum >= totalHandsRef.current) {
+            setIsAutoPlaying(false);
             return;
         }
         try {
             setError(null);
             setLoading(true);
-            const response = await axios.get(`${API_BASE_URL}/simulations/${simulationId}/hands/${nextHandNum}`);
+            const response = await axios.get(`${API_BASE_URL}/simulations/${simulationIdRef.current}/hands/${nextHandNum}`);
             setHandNum(nextHandNum);
             setGameState(response.data);
         } catch (err) {
             console.error("Error fetching hand:", err);
             setError("Failed to fetch hand data.");
+            setIsAutoPlaying(false);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    // Auto-play effect
+    useEffect(() => {
+        if (!isAutoPlaying) return;
+
+        const intervalMs = SPEED_MAP[playbackSpeed] || 2000;
+        const interval = setInterval(() => {
+            handleProceed();
+        }, intervalMs);
+
+        return () => clearInterval(interval);
+    }, [isAutoPlaying, playbackSpeed, handleProceed]);
 
     const handleStartNewSimulation = () => {
-        setIsModalOpen(true);
+        setCurrentPage('config');
         setSimulationId(null);
         setGameState(null);
         setHandNum(-1);
@@ -125,6 +189,12 @@ const App = () => {
         setHandsCompleted(0);
         setTotalHands(0);
         setError(null);
+        setIsAutoPlaying(false);
+        setPlaybackSpeed(1);
+    };
+
+    const toggleAutoPlay = () => {
+        setIsAutoPlaying(prev => !prev);
     };
 
     const progressPercent = totalHands > 0 ? Math.round((handsCompleted / totalHands) * 100) : 0;
@@ -146,7 +216,7 @@ const App = () => {
                 </div>
 
                 {/* Landing / Config */}
-                {isModalOpen && (
+                {currentPage === 'config' && (
                     <>
                         <img className="hero-image" src={require('./cards.png')} alt="cards" />
 
@@ -199,18 +269,24 @@ const App = () => {
                                     <Input onChange={(e) => setNotifPhoneNumber(e.target.value)} placeholder="Optional" addonBefore="+1" />
                                 </Form.Item>
                                 <Form.Item wrapperCol={{ offset: 0, span: 24 }} style={{ textAlign: 'center', marginTop: 24 }}>
-                                    <Button className="btn-gold" onClick={handleStartSimulation} loading={loading}>
+                                    <Button className="btn-gold btn-gold-pulse" onClick={handleStartSimulation} loading={loading}>
                                         RUN SIMULATION
                                     </Button>
                                 </Form.Item>
                                 {error && <div className="error-message">{error}</div>}
                             </Form>
                         </div>
+
+                        <div style={{ marginTop: 32 }}>
+                            <button className="btn-research" onClick={() => setCurrentPage('research')}>
+                                <span className="research-icon">&#128300;</span> View Research
+                            </button>
+                        </div>
                     </>
                 )}
 
                 {/* Simulation View */}
-                {!isModalOpen && (
+                {currentPage === 'simulation' && (
                     <div className="simulation-section">
                         {/* Progress */}
                         {!isSimulationDone && (
@@ -239,14 +315,42 @@ const App = () => {
 
                         {/* Controls */}
                         <div className="controls-section">
-                            {canPlayHand && (
+                            {canPlayHand && !isAutoPlaying && (
                                 <Button className="btn-primary" onClick={handleProceed} loading={loading}>
                                     Play Hand {handNum + 2 <= totalHands ? `#${handNum + 2}` : ''}
                                 </Button>
                             )}
+
+                            {canPlayHand && (
+                                <>
+                                    <Button
+                                        className={isAutoPlaying ? 'btn-pause' : 'btn-play'}
+                                        onClick={toggleAutoPlay}
+                                    >
+                                        {isAutoPlaying ? '⏸ Pause' : '▶ Auto-Play'}
+                                    </Button>
+
+                                    <div className="speed-selector">
+                                        {[1, 2, 5, 10].map(speed => (
+                                            <button
+                                                key={speed}
+                                                className={`speed-btn ${playbackSpeed === speed ? 'active' : ''}`}
+                                                onClick={() => setPlaybackSpeed(speed)}
+                                            >
+                                                {speed}x
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+
                             <Button className="btn-secondary" onClick={handleStartNewSimulation}>
                                 New Simulation
                             </Button>
+
+                            <button className="btn-research btn-research-small" onClick={() => setCurrentPage('research')}>
+                                <span className="research-icon">&#128300;</span> Research
+                            </button>
                         </div>
 
                         {error && <div className="error-message">{error}</div>}
@@ -273,7 +377,16 @@ const App = () => {
                                             )}
                                         </div>
                                         <div className="high-hand-table-id">
-                                            Table: {gameState.highHandSnapshot?.tableID ? gameState.highHandSnapshot.tableID.substring(0, 8) + '...' : 'N/A'}
+                                            {highHandTableInfo ? (
+                                                <>
+                                                    <span className={`hh-table-badge ${highHandTableInfo.isPlo ? 'plo' : 'nlh'}`}>
+                                                        {highHandTableInfo.isPlo ? 'PLO' : 'NLH'}
+                                                    </span>
+                                                    {' '}Table {highHandTableInfo.tableNumber}
+                                                </>
+                                            ) : (
+                                                'N/A'
+                                            )}
                                         </div>
                                     </div>
 
@@ -303,19 +416,41 @@ const App = () => {
                                 {/* Tables */}
                                 <div className="tables-section-title">POKER ROOM</div>
                                 <div className="tables-container">
-                                    {Object.keys(gameState.tableIdToSnapshot).map((tableId) => {
+                                    {Object.keys(gameState.tableIdToSnapshot).sort().map((tableId) => {
                                         const tableData = gameState.tableIdToSnapshot[tableId];
                                         return (
                                             <PokerTable
                                                 key={tableId}
                                                 tableData={tableData}
-                                                tableNumber={tableId}
+                                                tableNumber={tableIdMap[tableId] || 0}
+                                                isHighHandTable={gameState.highHandSnapshot?.tableID === tableId}
                                             />
                                         );
                                     })}
                                 </div>
                             </>
                         )}
+                    </div>
+                )}
+
+                {/* Research Page */}
+                {currentPage === 'research' && (
+                    <div className="research-page">
+                        <div className="research-wip">
+                            <div className="research-wip-icon">&#128300;</div>
+                            <h2 className="research-wip-title">Research Hub</h2>
+                            <p className="research-wip-desc">
+                                Deep-dive analytics on high hand promotion fairness, optimal qualifier thresholds,
+                                and PLO vs NLH win-rate distributions coming soon.
+                            </p>
+                            <div className="research-wip-badge">WORK IN PROGRESS</div>
+                            <button
+                                className="btn-research-back"
+                                onClick={() => setCurrentPage(simulationId ? 'simulation' : 'config')}
+                            >
+                                &#8592; Back
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

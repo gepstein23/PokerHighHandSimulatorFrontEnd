@@ -5,8 +5,9 @@
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 20px;
+  padding: 14px;
   transition: border-color 0.3s, box-shadow 0.3s;
+  overflow: visible;
 }
 
 .poker-table-card:hover {
@@ -14,22 +15,38 @@
   box-shadow: var(--shadow-gold);
 }
 
-/* Table Header (NLH/PLO + Qualifying badge) */
+/* Qualifying glow */
+.poker-table-card.qualifying {
+  border-color: var(--gold);
+  box-shadow:
+    0 0 12px rgba(212, 175, 55, 0.35),
+    0 0 30px rgba(212, 175, 55, 0.15),
+    inset 0 0 8px rgba(212, 175, 55, 0.05);
+  animation: qualifyGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes qualifyGlow {
+  from { box-shadow: 0 0 12px rgba(212, 175, 55, 0.35), 0 0 30px rgba(212, 175, 55, 0.15); }
+  to { box-shadow: 0 0 18px rgba(212, 175, 55, 0.5), 0 0 40px rgba(212, 175, 55, 0.25); }
+}
+
+/* Table Header (NLH/PLO + Table # + Qualifying badge) */
 .poker-table-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 8px;
   padding: 0 4px;
 }
 
 .table-type-badge {
   font-family: 'Cinzel', Georgia, serif;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 2px;
-  padding: 4px 14px;
-  border-radius: 12px;
+  padding: 3px 10px;
+  border-radius: 10px;
 }
 
 .table-type-badge.nlh {
@@ -44,15 +61,24 @@
   border: 1px solid rgba(196, 30, 58, 0.3);
 }
 
+.table-number-label {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
 .qualifying-badge {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 1px;
-  padding: 3px 10px;
+  padding: 2px 8px;
   border-radius: 10px;
   background: rgba(212, 175, 55, 0.12);
   color: var(--gold);
   border: 1px solid var(--gold-border);
+  margin-left: auto;
 }
 
 /* Table Wrapper */
@@ -61,16 +87,16 @@
   margin: 0 auto;
 }
 
-/* The Felt */
+/* The Felt - elliptical/pill shape */
 .poker-table-felt {
   width: 100%;
   height: 100%;
-  border-radius: 50%;
+  border-radius: 45%;
   background: var(--felt-gradient);
-  border: 8px solid var(--wood);
+  border: 6px solid var(--wood);
   box-shadow:
-    inset 0 0 30px rgba(0, 0, 0, 0.3),
-    0 4px 20px rgba(0, 0, 0, 0.4),
+    inset 0 0 20px rgba(0, 0, 0, 0.3),
+    0 3px 14px rgba(0, 0, 0, 0.4),
     0 0 0 2px var(--wood-light);
   position: relative;
 }
@@ -78,39 +104,40 @@
 /* Winning Hand */
 .winning-hand-display {
   position: absolute;
-  top: -45px;
+  top: -36px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
   background: linear-gradient(135deg, var(--red) 0%, #8b0020 100%);
   border: 2px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
-  padding: 6px 12px;
+  border-radius: 8px;
+  padding: 4px 8px;
   text-align: center;
   box-shadow: 0 4px 12px var(--red-glow);
 }
 
 .no-winning-hand {
   position: absolute;
-  top: -35px;
+  top: -28px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 6px 16px;
+  padding: 4px 12px;
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 10px;
+  white-space: nowrap;
 }
 
 .winning-label {
   display: block;
-  font-size: 9px;
+  font-size: 8px;
   text-transform: uppercase;
   letter-spacing: 2px;
   color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 2px;
+  margin-bottom: 1px;
   font-weight: 600;
 }
 
@@ -122,11 +149,11 @@
 }
 
 .winning-hand-display .card img {
-  width: 42px;
+  width: 32px;
   height: auto;
-  border-radius: 3px;
+  border-radius: 2px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-  margin: 0 1px;
+  margin: 0 0px;
 }
 
 /* Seats */
@@ -140,23 +167,23 @@
 
 .seat .cards-row {
   background: rgba(92, 51, 23, 0.85);
-  border-radius: 8px;
-  padding: 3px 4px;
+  border-radius: 6px;
+  padding: 2px 3px;
   border: 1px solid rgba(139, 94, 60, 0.5);
 }
 
 .seat .card img {
-  width: 34px;
+  width: 22px;
   height: auto;
   border-radius: 2px;
-  margin: 0 1px;
+  margin: 0 -2px;
 }
 
 .seat-label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   color: var(--gold-dim);
-  margin-top: 2px;
+  margin-top: 1px;
   text-shadow: 0 1px 2px rgba(0,0,0,0.8);
 }
 
@@ -169,31 +196,28 @@
   z-index: 6;
   background: rgba(0, 0, 0, 0.25);
   border: 2px solid var(--gold-border);
-  border-radius: 10px;
-  padding: 6px 10px;
+  border-radius: 8px;
+  padding: 4px 6px;
 }
 
 .community-cards-display .card img {
-  width: 44px;
+  width: 36px;
   height: auto;
-  border-radius: 3px;
+  border-radius: 2px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-  margin: 0 2px;
+  margin: 0 1px;
 }
 
 /* Table ID */
 .table-id-display {
   position: absolute;
-  bottom: 14px;
+  bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 5;
   font-size: 9px;
   color: rgba(255, 255, 255, 0.35);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 140px;
 }
 
 /* Generic card styling */
@@ -203,4 +227,15 @@
 
 .card img {
   display: block;
+}
+
+/* Hover zoom on individual cards */
+.poker-table-card .card img {
+  transition: transform 0.25s ease, z-index 0s;
+}
+
+.poker-table-card .card img:hover {
+  transform: scale(1.4);
+  z-index: 50;
+  position: relative;
 }

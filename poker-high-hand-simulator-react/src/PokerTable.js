@@ -16,34 +16,38 @@ export const renderCard = (card) => {
     );
 };
 
-export const PokerTable = ({ tableData, tableNumber }) => {
+export const PokerTable = ({ tableData, tableNumber, isHighHandTable }) => {
     const chairsPerTable = tableData.playerCards.length;
     const angleStep = 360 / chairsPerTable;
-    const tableSize = 420;
-    const chairSize = 80;
+    const tableWidth = 340;
+    const tableHeight = 220;
+    const chairSize = 60;
 
     const getChairPosition = (index) => {
-        const angle = index * angleStep - 90; // start from top
-        const radius = tableSize / 2.6;
-        const x = radius * Math.cos((angle * Math.PI) / 180) - chairSize / 2 + tableSize / 2;
-        const y = radius * Math.sin((angle * Math.PI) / 180) - chairSize / 2 + tableSize / 2;
+        const angle = (index * angleStep - 90) * (Math.PI / 180);
+        const a = tableWidth / 2.4;  // horizontal semi-axis
+        const b = tableHeight / 2.2; // vertical semi-axis
+        const x = a * Math.cos(angle) - chairSize / 2 + tableWidth / 2;
+        const y = b * Math.sin(angle) - chairSize / 2 + tableHeight / 2;
         return { position: 'absolute', left: x, top: y, width: chairSize, height: chairSize };
     };
 
     const isPlo = tableData.plo;
+    const qualifies = tableData.qualifiesForHighHand;
 
     return (
-        <div className="poker-table-card">
+        <div className={`poker-table-card${qualifies ? ' qualifying' : ''}`}>
             <div className="poker-table-header">
                 <span className={`table-type-badge ${isPlo ? 'plo' : 'nlh'}`}>
                     {isPlo ? 'PLO' : 'NLH'}
                 </span>
-                {tableData.qualifiesForHighHand && (
+                <span className="table-number-label">#{tableNumber}</span>
+                {qualifies && (
                     <span className="qualifying-badge">&#9733; QUALIFIES</span>
                 )}
             </div>
 
-            <div className="poker-table-wrapper" style={{ width: tableSize, height: tableSize }}>
+            <div className="poker-table-wrapper" style={{ width: tableWidth, height: tableHeight }}>
                 <div className="poker-table-felt">
                     {tableData.winningHand ? (
                         <div className="winning-hand-display">
@@ -78,7 +82,7 @@ export const PokerTable = ({ tableData, tableNumber }) => {
                     </div>
 
                     <div className="table-id-display">
-                        {tableNumber.substring(0, 8)}
+                        Table {tableNumber}
                     </div>
                 </div>
             </div>

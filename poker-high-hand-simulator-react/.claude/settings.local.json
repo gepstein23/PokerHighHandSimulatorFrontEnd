@@ -4,7 +4,9 @@
       "Bash(tree:*)",
       "Bash(npx react-scripts build:*)",
       "Bash(npm install:*)",
-      "Bash(terraform output:*)"
+      "Bash(terraform output:*)",
+      "Bash(curl:*)",
+      "Bash(aws amplify:*)"
     ]
   }
 }
