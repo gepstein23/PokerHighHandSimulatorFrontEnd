@@ -20,7 +20,7 @@ export const renderCard = (card) => {
 export const PokerTable = ({ tableData, tableNumber, isHighHandTable }) => {
     const chairsPerTable = tableData.playerCards.length;
     const angleStep = 360 / chairsPerTable;
-    const tableWidth = 400;
+    const tableWidth = 420;
     const tableHeight = 260;
     const chairSize = 65;
 
@@ -46,16 +46,12 @@ export const PokerTable = ({ tableData, tableNumber, isHighHandTable }) => {
     }, []);
 
     const handleMouseEnter = useCallback(() => {
-        hoverTimerRef.current = setTimeout(triggerZoom, 1500);
+        hoverTimerRef.current = setTimeout(triggerZoom, 400);
     }, [triggerZoom]);
 
     const handleMouseMove = useCallback(() => {
-        // If cursor moves, reset the timer (must hold still)
-        if (hoverTimerRef.current && !hoverStyle) {
-            clearTimeout(hoverTimerRef.current);
-            hoverTimerRef.current = setTimeout(triggerZoom, 1500);
-        }
-    }, [triggerZoom, hoverStyle]);
+        // no-op: allow zoom even if cursor moves
+    }, []);
 
     const handleMouseLeave = useCallback(() => {
         if (hoverTimerRef.current) {
@@ -102,6 +98,19 @@ export const PokerTable = ({ tableData, tableNumber, isHighHandTable }) => {
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
         >
+            {tableData.winningHand ? (
+                <div className="winning-hand-display">
+                    <span className="winning-label">Winner</span>
+                    <div className="cards-row">
+                        {tableData.winningHand.map((card, index) => (
+                            <span key={index}>{renderCard(card)}</span>
+                        ))}
+                    </div>
+                </div>
+            ) : (
+                <div className="no-winning-hand">No Winning Hand</div>
+            )}
+
             <div className="poker-table-header">
                 <span className={`table-type-badge ${isPlo ? 'plo' : 'nlh'}`}>
                     {isPlo ? 'PLO' : 'NLH'}
@@ -112,21 +121,9 @@ export const PokerTable = ({ tableData, tableNumber, isHighHandTable }) => {
                 )}
             </div>
 
-            <div className="poker-table-wrapper" style={{ width: tableWidth, height: tableHeight }}>
-                <div className="poker-table-felt">
-                    {tableData.winningHand ? (
-                        <div className="winning-hand-display">
-                            <span className="winning-label">Winner</span>
-                            <div className="cards-row">
-                                {tableData.winningHand.map((card, index) => (
-                                    <span key={index}>{renderCard(card)}</span>
-                                ))}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="no-winning-hand">No Winning Hand</div>
-                    )}
+            <div className="poker-table-wrapper" style={{ width: tableWidth }}>
 
+                <div className="poker-table-felt" style={{ height: tableHeight }}>
                     {tableData.playerCards.map((playerCards, index) => (
                         <div key={index} className={`seat${index === winningSeatIndex ? ' winning-seat' : ''}`} style={getChairPosition(index)}>
                             <div className="cards-row">

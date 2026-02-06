@@ -446,18 +446,21 @@ const App = () => {
                                         </div>
                                         <div className="high-hand-qualifiers">
                                             {qualifyingTables.length > 0 ? (
-                                                qualifyingTables.map((qt) => (
-                                                    <div key={qt.tableId} className={`hh-qualifier-row ${qt.isWinner ? 'winner' : ''}`}>
-                                                        {qt.isWinner && <span className="hh-winner-star">&#9733;</span>}
-                                                        <span className={`hh-table-badge ${qt.isPlo ? 'plo' : 'nlh'}`}>
-                                                            {qt.isPlo ? 'PLO' : 'NLH'}
-                                                        </span>
-                                                        <span className="hh-qualifier-text">Table {qt.tableNumber}</span>
-                                                        {qt.seatNumber && (
-                                                            <span className="hh-seat-badge">Seat {qt.seatNumber}</span>
-                                                        )}
-                                                    </div>
-                                                ))
+                                                (() => {
+                                                    const qt = qualifyingTables[0];
+                                                    return (
+                                                        <div className="hh-qualifier-row winner">
+                                                            <span className="hh-winner-star">&#9733;</span>
+                                                            <span className={`hh-table-badge ${qt.isPlo ? 'plo' : 'nlh'}`}>
+                                                                {qt.isPlo ? 'PLO' : 'NLH'}
+                                                            </span>
+                                                            <span className="hh-qualifier-text">Table {qt.tableNumber}</span>
+                                                            {qt.seatNumber && (
+                                                                <span className="hh-seat-badge">Seat {qt.seatNumber}</span>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()
                                             ) : (
                                                 <div className="hh-qualifier-row">N/A</div>
                                             )}
